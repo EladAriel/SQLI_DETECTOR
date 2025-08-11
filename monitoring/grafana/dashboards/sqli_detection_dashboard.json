@@ -1,0 +1,320 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "SQL Injection Detection Monitoring",
+    "tags": ["security", "sql-injection", "mcp", "monitoring"],
+    "timezone": "browser",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Analysis Overview",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(sqli_analysis_total[5m]))",
+            "legendFormat": "Analyses/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "ops",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 50}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Vulnerability Detection Rate",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(sqli_analysis_total{result=\"vulnerable\"}[5m])) / sum(rate(sqli_analysis_total[5m])) * 100",
+            "legendFormat": "Vulnerability Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 20},
+                {"color": "red", "value": 50}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Active Analyses",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sqli_active_analyses",
+            "legendFormat": "Active",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 25}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Database Connection",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "database_connection_status",
+            "legendFormat": "DB Status",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "mappings": [
+              {"type": "value", "value": "1", "text": "Connected"},
+              {"type": "value", "value": "0", "text": "Disconnected"}
+            ],
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "SQL Injection Analysis Timeline",
+        "type": "timeseries",
+        "gridPos": {"h": 9, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "sum by(result) (rate(sqli_analysis_total[1m]))",
+            "legendFormat": "{{result}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "insertNulls": false,
+              "showPoints": "auto",
+              "pointSize": 5,
+              "stacking": {"mode": "none", "group": "A"}
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "MCP Tool Usage",
+        "type": "timeseries",
+        "gridPos": {"h": 9, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum by(tool_name) (rate(mcp_tool_calls_total[1m]))",
+            "legendFormat": "{{tool_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Vulnerability Types Detected",
+        "type": "piechart",
+        "gridPos": {"h": 9, "w": 8, "x": 0, "y": 17},
+        "targets": [
+          {
+            "expr": "sum by(vulnerability_type) (sqli_vulnerabilities_detected_total)",
+            "legendFormat": "{{vulnerability_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Analysis Duration Percentiles",
+        "type": "timeseries",
+        "gridPos": {"h": 9, "w": 8, "x": 8, "y": 17},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(sqli_analysis_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(sqli_analysis_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(sqli_analysis_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Error Rate by Endpoint",
+        "type": "timeseries",
+        "gridPos": {"h": 9, "w": 8, "x": 16, "y": 17},
+        "targets": [
+          {
+            "expr": "sum by(endpoint) (rate(sqli_api_errors_total[5m]))",
+            "legendFormat": "{{endpoint}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "ops"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "File Processing Statistics",
+        "type": "table",
+        "gridPos": {"h": 9, "w": 12, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "sum by(file_type, processing_status) (sqli_files_processed_total)",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Risk Level Distribution",
+        "type": "bargauge",
+        "gridPos": {"h": 9, "w": 12, "x": 12, "y": 26},
+        "targets": [
+          {
+            "expr": "sum by(risk_level) (sqli_analysis_total)",
+            "legendFormat": "{{risk_level}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "orange", "value": 50},
+                {"color": "red", "value": 100}
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "High Vulnerability Rate",
+          "datasource": "prometheus",
+          "enable": true,
+          "expr": "sum(rate(sqli_analysis_total{result=\"vulnerable\"}[5m])) / sum(rate(sqli_analysis_total[5m])) > 0.5",
+          "iconColor": "red",
+          "titleFormat": "High vulnerability detection rate"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "file_type",
+          "type": "query",
+          "query": "label_values(sqli_analysis_total, file_type)",
+          "includeAll": true,
+          "allValue": ".*"
+        },
+        {
+          "name": "tool_name",
+          "type": "query", 
+          "query": "label_values(mcp_tool_calls_total, tool_name)",
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    }
+  }
+}

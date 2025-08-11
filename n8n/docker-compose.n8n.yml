@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-sqli-detection
+    restart: always
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=${N8N_PORT:-5678}
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/New_York}
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-your-encryption-key-here}
+      # Database configuration
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+      # Disable user management for demo
+      - N8N_USER_MANAGEMENT_DISABLED=true
+      # Enable workflow execution
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_MODE=regular
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    volumes:
+      - ./data:/home/node/.n8n
+      - ./workflows:/home/node/.n8n/workflows
+      - ./credentials:/home/node/.n8n/credentials
+    networks:
+      - sqli-detection-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  sqli-detection-network:
+    external: true
+
+volumes:
+  n8n_data:
+    driver: local

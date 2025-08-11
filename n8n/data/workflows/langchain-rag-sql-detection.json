@@ -1,0 +1,422 @@
+{
+    "name": "LangChain RAG SQL Injection Detection Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "sql-detection",
+                "options": {
+                    "responseMode": "onReceived"
+                }
+            },
+            "id": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+            "name": "Webhook - Start SQL Analysis",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ],
+            "webhookId": "sql-detection-webhook"
+        },
+        {
+            "parameters": {
+                "functionCode": "// Extract and validate input data\nconst inputData = $input.all()[0].json;\n\nconst query = inputData.query || inputData.sql_query || '';\nconst maxSources = inputData.max_sources || 5;\nconst includeScores = inputData.include_scores || true;\nconst contextType = inputData.context_type || 'all';\n\n// Validate required fields\nif (!query || query.trim() === '') {\n  throw new Error('SQL query is required');\n}\n\n// Log the start of analysis\nconsole.log(`🔍 Starting SQL injection analysis for query: ${query.substring(0, 100)}...`);\n\nreturn {\n  json: {\n    query: query.trim(),\n    max_sources: maxSources,\n    include_scores: includeScores,\n    context_type: contextType,\n    analysis_id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,\n    timestamp: new Date().toISOString(),\n    step: '1_input_validation',\n    status: 'validated'\n  }\n};"
+            },
+            "id": "2b3c4d5e-6f78-9012-bcde-f23456789012",
+            "name": "Step 1: Input Validation & Processing",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://localhost:3002/api/rag/analyze",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "value": "={{ $json.query }}"
+                        },
+                        {
+                            "name": "max_sources",
+                            "value": "={{ $json.max_sources }}"
+                        },
+                        {
+                            "name": "include_scores",
+                            "value": "={{ $json.include_scores }}"
+                        },
+                        {
+                            "name": "context_type",
+                            "value": "={{ $json.context_type }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 30000,
+                    "response": {
+                        "response": {
+                            "fullResponse": false,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "3c4d5e6f-7890-1234-cdef-345678901234",
+            "name": "Step 2: RAG Analysis Request",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Process the RAG analysis response\nconst ragResponse = $input.all()[0].json;\nconst inputData = $input.all()[0].json;\n\n// Log the RAG analysis results\nconsole.log(`📊 RAG Analysis completed for: ${inputData.analysis_id}`);\nconsole.log(`🎯 Answer: ${ragResponse.answer?.substring(0, 200)}...`);\nconsole.log(`📚 Sources found: ${ragResponse.sources?.length || 0}`);\n\n// Extract key information\nconst vulnerabilityDetected = ragResponse.answer?.toLowerCase().includes('injection') || \n                             ragResponse.answer?.toLowerCase().includes('vulnerable') ||\n                             ragResponse.answer?.toLowerCase().includes('risk');\n\nconst riskLevel = vulnerabilityDetected ? \n  (ragResponse.answer?.toLowerCase().includes('high') ? 'HIGH' :\n   ragResponse.answer?.toLowerCase().includes('medium') ? 'MEDIUM' : 'LOW') : 'NONE';\n\n// Format sources for easier consumption\nconst formattedSources = ragResponse.sources?.map((source, index) => ({\n  id: index + 1,\n  content: source.content?.substring(0, 500) + '...',\n  metadata: source.metadata,\n  score: source.score,\n  relevance: source.score > 0.8 ? 'HIGH' : source.score > 0.6 ? 'MEDIUM' : 'LOW'\n})) || [];\n\nreturn {\n  json: {\n    analysis_id: inputData.analysis_id,\n    original_query: inputData.query,\n    rag_analysis: {\n      answer: ragResponse.answer,\n      vulnerability_detected: vulnerabilityDetected,\n      risk_level: riskLevel,\n      sources_count: formattedSources.length,\n      sources: formattedSources,\n      timestamp: ragResponse.timestamp\n    },\n    step: '2_rag_analysis',\n    status: 'completed'\n  }\n};"
+            },
+            "id": "4d5e6f78-9012-3456-def0-456789012345",
+            "name": "Step 3: Process RAG Results",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://localhost:3001/api/detection/analyze",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "code",
+                            "value": "={{ $json.original_query }}"
+                        },
+                        {
+                            "name": "fileType",
+                            "value": "sql"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 15000,
+                    "response": {
+                        "response": {
+                            "fullResponse": false,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "5e6f7890-1234-5678-ef01-567890123456",
+            "name": "Step 4: Traditional Detection API",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Combine RAG and traditional detection results\nconst ragData = $input.all()[0].json.rag_analysis;\nconst detectionData = $input.all()[1].json;\nconst originalData = $input.all()[0].json;\n\nconsole.log(`🔗 Combining analysis results for: ${originalData.analysis_id}`);\n\n// Compare results\nconst ragDetected = ragData.vulnerability_detected;\nconst traditionalDetected = detectionData.isVulnerable || false;\nconst agreement = ragDetected === traditionalDetected;\n\n// Determine final assessment\nconst finalRisk = ragDetected || traditionalDetected ? \n  Math.max(\n    ragData.risk_level === 'HIGH' ? 3 : ragData.risk_level === 'MEDIUM' ? 2 : ragData.risk_level === 'LOW' ? 1 : 0,\n    traditionalDetected ? 2 : 0\n  ) : 0;\n\nconst finalRiskLevel = finalRisk >= 3 ? 'HIGH' : finalRisk >= 2 ? 'MEDIUM' : finalRisk >= 1 ? 'LOW' : 'NONE';\n\n// Generate recommendations\nconst recommendations = [];\nif (ragDetected || traditionalDetected) {\n  recommendations.push('🚨 Potential SQL injection vulnerability detected');\n  recommendations.push('🛡️ Use parameterized queries/prepared statements');\n  recommendations.push('🔍 Validate and sanitize all user inputs');\n  recommendations.push('🔒 Apply principle of least privilege to database access');\n}\n\nif (ragData.sources_count > 0) {\n  recommendations.push(`📚 Found ${ragData.sources_count} relevant security patterns for reference`);\n}\n\nreturn {\n  json: {\n    analysis_id: originalData.analysis_id,\n    query: originalData.original_query,\n    final_assessment: {\n      vulnerability_detected: ragDetected || traditionalDetected,\n      risk_level: finalRiskLevel,\n      confidence: agreement ? 'HIGH' : 'MEDIUM',\n      methods_agreement: agreement\n    },\n    rag_results: {\n      detected: ragDetected,\n      risk_level: ragData.risk_level,\n      answer: ragData.answer,\n      sources_used: ragData.sources_count,\n      top_sources: ragData.sources.slice(0, 3)\n    },\n    traditional_detection: {\n      detected: traditionalDetected,\n      patterns_matched: detectionData.patterns || [],\n      severity: detectionData.severity || 'UNKNOWN'\n    },\n    recommendations: recommendations,\n    processing_time: {\n      total_ms: Date.now() - new Date(originalData.timestamp).getTime(),\n      completed_at: new Date().toISOString()\n    },\n    step: '4_final_analysis',\n    status: 'completed'\n  }\n};"
+            },
+            "id": "6f789012-3456-7890-f012-678901234567",
+            "name": "Step 5: Combine & Analyze Results",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://localhost:3002/api/rag/security-advice",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "value": "How to fix SQL injection in: {{ $json.query }}"
+                        },
+                        {
+                            "name": "vulnerability_type",
+                            "value": "sql_injection"
+                        },
+                        {
+                            "name": "risk_level",
+                            "value": "={{ $json.final_assessment.risk_level }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 20000,
+                    "response": {
+                        "response": {
+                            "fullResponse": false,
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "7890123-4567-8901-0123-789012345678",
+            "name": "Step 6: Get Security Advice (if vulnerable)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1560,
+                200
+            ],
+            "executeOnce": false
+        },
+        {
+            "parameters": {
+                "functionCode": "// Generate final comprehensive report\nconst analysisData = $input.all()[0].json;\nconst securityAdvice = $input.all()[1]?.json || null;\n\nconsole.log(`📋 Generating final report for: ${analysisData.analysis_id}`);\n\n// Create detailed report\nconst report = {\n  metadata: {\n    analysis_id: analysisData.analysis_id,\n    timestamp: new Date().toISOString(),\n    processing_time_ms: analysisData.processing_time.total_ms,\n    version: '1.0.0'\n  },\n  query_analysis: {\n    original_query: analysisData.query,\n    query_length: analysisData.query.length,\n    contains_keywords: {\n      select: analysisData.query.toLowerCase().includes('select'),\n      union: analysisData.query.toLowerCase().includes('union'),\n      or_condition: analysisData.query.toLowerCase().includes(\"or '1'='1\"),\n      comment: analysisData.query.includes('--') || analysisData.query.includes('/*')\n    }\n  },\n  vulnerability_assessment: {\n    is_vulnerable: analysisData.final_assessment.vulnerability_detected,\n    risk_level: analysisData.final_assessment.risk_level,\n    confidence: analysisData.final_assessment.confidence,\n    detection_methods: {\n      rag_detection: analysisData.rag_results.detected,\n      traditional_detection: analysisData.traditional_detection.detected,\n      methods_agree: analysisData.final_assessment.methods_agreement\n    }\n  },\n  rag_insights: {\n    analysis_summary: analysisData.rag_results.answer?.substring(0, 500) + '...',\n    sources_consulted: analysisData.rag_results.sources_used,\n    relevant_patterns: analysisData.rag_results.top_sources.map(source => ({\n      content_preview: source.content?.substring(0, 100) + '...',\n      relevance: source.relevance,\n      score: source.score\n    }))\n  },\n  traditional_detection: {\n    patterns_matched: analysisData.traditional_detection.patterns_matched,\n    severity: analysisData.traditional_detection.severity\n  },\n  recommendations: analysisData.recommendations,\n  security_advice: securityAdvice ? {\n    detailed_advice: securityAdvice.answer?.substring(0, 1000) + '...',\n    preventive_measures: securityAdvice.sources?.slice(0, 3).map(s => s.content?.substring(0, 200) + '...')\n  } : null,\n  next_steps: [\n    '🔍 Review the identified vulnerabilities',\n    '🛠️ Implement recommended security measures', \n    '🧪 Test fixes with additional payloads',\n    '📊 Monitor for similar patterns in production',\n    '📚 Update security training based on findings'\n  ]\n};\n\n// Log summary\nconsole.log(`✅ Analysis complete!`);\nconsole.log(`🎯 Vulnerability: ${report.vulnerability_assessment.is_vulnerable ? 'DETECTED' : 'NOT DETECTED'}`);\nconsole.log(`⚠️ Risk Level: ${report.vulnerability_assessment.risk_level}`);\nconsole.log(`🔗 Methods Agreement: ${report.vulnerability_assessment.detection_methods.methods_agree}`);\n\nreturn { json: report };"
+            },
+            "id": "8901234-5678-9012-1234-890123456789",
+            "name": "Step 7: Generate Final Report",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1780,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "allIncomingItems",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "9012345-6789-0123-2345-901234567890",
+            "name": "Return Analysis Report",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Log error and create error response\nconst error = $input.all()[0].error;\nconst inputData = $input.all()[0].json;\n\nconsole.error(`❌ Error in SQL injection analysis:`, error);\n\nreturn {\n  json: {\n    error: true,\n    message: 'Analysis failed',\n    details: error?.message || 'Unknown error',\n    analysis_id: inputData?.analysis_id || 'unknown',\n    timestamp: new Date().toISOString(),\n    step: 'error_handling'\n  }\n};"
+            },
+            "id": "a123456-789b-cdef-3456-a12345678901",
+            "name": "Error Handler",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "allIncomingItems",
+                "options": {
+                    "responseCode": 500,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "b234567-890c-def0-4567-b23456789012",
+            "name": "Return Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1560,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Start SQL Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Step 1: Input Validation & Processing",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 1: Input Validation & Processing": {
+            "main": [
+                [
+                    {
+                        "node": "Step 2: RAG Analysis Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 2: RAG Analysis Request": {
+            "main": [
+                [
+                    {
+                        "node": "Step 3: Process RAG Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 3: Process RAG Results": {
+            "main": [
+                [
+                    {
+                        "node": "Step 4: Traditional Detection API",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 4: Traditional Detection API": {
+            "main": [
+                [
+                    {
+                        "node": "Step 5: Combine & Analyze Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 5: Combine & Analyze Results": {
+            "main": [
+                [
+                    {
+                        "node": "Step 6: Get Security Advice (if vulnerable)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 6: Get Security Advice (if vulnerable)": {
+            "main": [
+                [
+                    {
+                        "node": "Step 7: Generate Final Report",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Step 7: Generate Final Report": {
+            "main": [
+                [
+                    {
+                        "node": "Return Analysis Report",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Error Handler": {
+            "main": [
+                [
+                    {
+                        "node": "Return Error Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "timezone": "America/New_York",
+        "saveManualExecutions": true,
+        "callerPolicy": "workflowsFromSameOwner",
+        "errorWorkflow": "b234567-890c-def0-4567-b23456789012"
+    },
+    "staticData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "pinData": {},
+    "versionId": "1.0.0",
+    "triggerCount": 1,
+    "tags": [
+        {
+            "createdAt": "2025-08-11T12:00:00.000Z",
+            "updatedAt": "2025-08-11T12:00:00.000Z",
+            "id": "tag1",
+            "name": "security"
+        },
+        {
+            "createdAt": "2025-08-11T12:00:00.000Z",
+            "updatedAt": "2025-08-11T12:00:00.000Z",
+            "id": "tag2",
+            "name": "sql-injection"
+        },
+        {
+            "createdAt": "2025-08-11T12:00:00.000Z",
+            "updatedAt": "2025-08-11T12:00:00.000Z",
+            "id": "tag3",
+            "name": "langchain"
+        }
+    ]
+}

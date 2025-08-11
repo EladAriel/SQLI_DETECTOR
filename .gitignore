@@ -1,0 +1,297 @@
+# ===========================================
+# SQL INJECTION DETECTION SYSTEM - GIT IGNORE
+# ===========================================
+
+# ===========================================
+# ENVIRONMENT & SENSITIVE DATA
+# ===========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.prod
+*.env
+*.env.*
+
+# Secrets and keys
+secrets/
+keys/
+certificates/
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.csr
+
+# ===========================================
+# NODE.JS & NPM
+# ===========================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# ===========================================
+# TYPESCRIPT & BUILD OUTPUT
+# ===========================================
+dist/
+build/
+out/
+*.tsbuildinfo
+.tsc-cache/
+
+# TypeScript v1 declaration files
+typings/
+
+# ===========================================
+# LOGS & MONITORING
+# ===========================================
+logs/
+*.log
+*.log.*
+log/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ===========================================
+# DATABASE & STORAGE
+# ===========================================
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database.db
+
+# Database dumps
+*.sql
+!infrastructure/database/*.sql
+!prisma/migrations/*.sql
+
+# Vector store data
+vector-store/
+embeddings/
+*.vec
+*.faiss
+
+# ===========================================
+# UPLOADS & USER CONTENT
+# ===========================================
+uploads/
+temp/
+tmp/
+user-data/
+file-uploads/
+media/
+static-content/
+
+# ===========================================
+# DOCKER & CONTAINERS
+# ===========================================
+# Docker volumes
+docker-volumes/
+docker-data/
+
+# Docker override files
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# ===========================================
+# CLOUD & DEPLOYMENT
+# ===========================================
+# AWS
+.aws/
+aws-exports.js
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Helm
+charts/*.tgz
+
+# ===========================================
+# IDE & EDITOR FILES
+# ===========================================
+# VS Code
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+!.vscode/settings.json.example
+
+# JetBrains IDEs
+.idea/
+*.swp
+*.swo
+*~
+
+# Vim
+*.swp
+*.swo
+*.swn
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===========================================
+# OPERATING SYSTEM FILES
+# ===========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================================
+# TESTING & COVERAGE
+# ===========================================
+# Jest
+coverage/
+.jest/
+jest-results.xml
+
+# Mocha
+mochawesome-report/
+
+# ===========================================
+# SECURITY ANALYSIS
+# ===========================================
+# Vulnerability scans
+security-report/
+vulnerability-report/
+*.sarif
+
+# Static analysis
+sonar-project.properties
+.sonarqube/
+
+# ===========================================
+# BACKUP & TEMPORARY FILES
+# ===========================================
+*.backup
+*.bak
+*.tmp
+*.temp
+*_backup
+*_bak
+
+# Backup directories
+backup/
+backups/
+archives/
+
+# ===========================================
+# MISCELLANEOUS
+# ===========================================
+# Optional stylelint cache
+.stylelintcache
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Optional package-lock.json (for projects using yarn)
+# package-lock.json
+
+# End of .gitignore

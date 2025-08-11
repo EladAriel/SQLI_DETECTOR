@@ -1,0 +1,167 @@
+{
+    "name": "Simple RAG Demo Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "simple-demo",
+                "options": {
+                    "responseMode": "onReceived"
+                },
+                "authentication": "none"
+            },
+            "id": "demo-webhook-1",
+            "name": "Demo Input",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "language": "javaScript",
+                "jsCode": "// Simple demo queries for testing\nconst demoQueries = [\n  \"SELECT * FROM users WHERE id = '1' OR '1'='1'\",\n  \"SELECT name FROM products WHERE category = 'electronics'\",\n  \"UPDATE users SET password = 'hacked' WHERE 1=1; --\",\n  \"SELECT email FROM customers WHERE city = 'Boston'\"\n];\n\n// Get input data from webhook\nconst webhookData = $input.all()[0].json;\nconsole.log('🔍 Webhook data received:', JSON.stringify(webhookData, null, 2));\n\n// Extract query from webhook data - check multiple possible locations\nconst inputQuery = (typeof webhookData.query === 'string' && webhookData.query) ||\n                  (typeof webhookData.body?.query === 'string' && webhookData.body?.query) ||\n                  (typeof webhookData.original_input?.body?.query === 'string' && webhookData.original_input?.body?.query);\n                  \nconst selectedQuery = inputQuery || demoQueries[Math.floor(Math.random() * demoQueries.length)];\n\nconsole.log(`🎯 Demo Analysis for: ${selectedQuery}`);\nconsole.log(`🔍 Input query found: ${inputQuery ? 'Yes' : 'No'}`);\nconsole.log(`🔍 Query source: ${inputQuery ? (webhookData.query ? 'direct' : 'body') : 'random demo'}`);\n\nreturn {\n  json: {\n    query: selectedQuery,\n    demo_mode: true,\n    timestamp: new Date().toISOString(),\n    original_input: webhookData,\n    debug_extraction: {\n      webhook_query: webhookData.query,\n      body_query: webhookData.body?.query,\n      nested_body_query: webhookData.original_input?.body?.query,\n      selected_query: selectedQuery\n    }\n  }\n};"
+            },
+            "id": "demo-prep-2",
+            "name": "Prepare Demo Query",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "language": "javaScript",
+                "jsCode": "// Prepare RAG request body\nconst inputData = $input.all()[0].json;\nconsole.log('🔧 Preparing RAG request for query:', inputData.query);\n\nconst ragRequest = {\n  query: inputData.query,\n  max_sources: 3,\n  include_scores: true\n};\n\nconsole.log('📦 RAG request body:', JSON.stringify(ragRequest, null, 2));\n\nreturn {\n  json: ragRequest\n};"
+            },
+            "id": "demo-prep-rag",
+            "name": "Prepare RAG Request",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:3002/api/v1/rag/analyze-sql",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "contentType": "json",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "value": "={{ $json.query }}"
+                        },
+                        {
+                            "name": "max_sources",
+                            "value": "={{ $json.max_sources }}"
+                        },
+                        {
+                            "name": "include_scores",
+                            "value": "={{ $json.include_scores }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "demo-rag-3",
+            "name": "RAG Analysis",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "language": "javaScript",
+                "jsCode": "// Format demo results\nconst ragResponse = $input.all()[0].json;\nconst ragResult = ragResponse.data || ragResponse; // Handle different response structures\n\n// Get the original query from the preparation step\nconst preparedData = $node[\"Prepare Demo Query\"].json;\nconst originalQuery = preparedData.query || 'Unknown Query';\n\nconsole.log('📊 RAG Response:', JSON.stringify(ragResult, null, 2));\nconsole.log('🔍 Original Query:', originalQuery);\n\nconst isVulnerable = ragResult.answer?.toLowerCase().includes('injection') || \n                   ragResult.answer?.toLowerCase().includes('vulnerable') ||\n                   ragResult.answer?.toLowerCase().includes('sql') ||\n                   originalQuery?.toLowerCase().includes('or') ||\n                   originalQuery?.toLowerCase().includes('union');\n\nconst demoReport = {\n  demo_results: {\n    query_analyzed: originalQuery,\n    vulnerability_detected: isVulnerable,\n    rag_answer: ragResult.answer || 'No analysis available',\n    sources_found: ragResult.sources?.length || 0,\n    top_sources: ragResult.sources?.slice(0, 2)?.map(s => ({\n      preview: s.content?.substring(0, 150) + '...' || 'No content',\n      score: s.score || 0\n    })) || [],\n    analysis_summary: {\n      risk_assessment: isVulnerable ? '🚨 HIGH RISK' : '✅ SAFE',\n      recommendation: isVulnerable ? \n        'Use parameterized queries and input validation' : \n        'Query appears safe, continue monitoring'\n    },\n    raw_rag_response: ragResult, // Include full response for debugging\n    debug_info: {\n      prepared_data: preparedData,\n      rag_status: ragResponse.status || 'unknown'\n    }\n  },\n  demo_info: {\n    timestamp: new Date().toISOString(),\n    processing_time: '< 1 second',\n    workflow_version: 'Demo v1.4'\n  }\n};\n\nconsole.log(`📊 Demo completed: ${isVulnerable ? 'VULNERABLE' : 'SAFE'}`);\n\nreturn { json: demoReport };"
+            },
+            "id": "demo-format-4",
+            "name": "Format Demo Results",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                800,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Demo Input": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Demo Query",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Demo Query": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare RAG Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare RAG Request": {
+            "main": [
+                [
+                    {
+                        "node": "RAG Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "RAG Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Format Demo Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Demo Results": {
+            "main": []
+        }
+    },
+    "active": true,
+    "settings": {
+        "timezone": "America/New_York",
+        "saveManualExecutions": true
+    },
+    "tags": [
+        {
+            "id": "demo-tag",
+            "name": "demo"
+        }
+    ]
+}

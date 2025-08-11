@@ -1,0 +1,27 @@
+{
+    "mcpServers": {
+        "sqli-detection-server": {
+            "command": "node",
+            "args": [
+                "dist/apps/mcp-server/index.js"
+            ],
+            "env": {
+                "SQLI_API_URL": "http://localhost:3001",
+                "NODE_ENV": "development",
+                "DEBUG": "true"
+            }
+        },
+        "sqli-detection-dev": {
+            "command": "ts-node",
+            "args": [
+                "--transpile-only",
+                "apps/mcp-server/index.ts"
+            ],
+            "env": {
+                "SQLI_API_URL": "http://localhost:3001",
+                "NODE_ENV": "development",
+                "DEBUG": "true"
+            }
+        }
+    }
+}

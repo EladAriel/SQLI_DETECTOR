@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id          String   @id @default(uuid())
+  fileName    String   @map("file_name")
+  fileType    String   @map("file_type")
+  filePath    String   @map("file_path")
+  content     String   @db.Text
+  size        Int      // File size in bytes
+  checksum    String   // File hash for deduplication
+  metadata    Json?    // Additional metadata (language, framework, etc.)
+  
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  chunks      FileChunk[]
+  embeddings  FileEmbedding[]
+  vulnerabilities VulnerabilityDetection[]
+  
+  // Indexes
+  @@map("files")
+  @@index([fileType])
+  @@index([createdAt])
+  @@unique([checksum]) // Prevent duplicate files
+}
+
+model FileChunk {
+  id        String   @id @default(uuid())
+  fileId    String   @map("file_id")
+  content   String   @db.Text
+  chunkIndex Int     @map("chunk_index") // Order of chunk in file
+  startLine Int?     @map("start_line")  // Starting line number
+  endLine   Int?     @map("end_line")    // Ending line number
+  metadata  Json?    // Chunk-specific metadata
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  file      File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  embeddings FileEmbedding[]
+  vulnerabilities VulnerabilityDetection[]
+  
+  // Indexes
+  @@map("file_chunks")
+  @@index([fileId])
+  @@index([chunkIndex])
+}
+
+model FileEmbedding {
+  id         String    @id @default(uuid())
+  fileId     String?   @map("file_id")
+  chunkId    String?   @map("chunk_id")
+  embedding  Float[]   // Vector embedding
+  model      String    // Embedding model used
+  dimensions Int       // Vector dimensions
+  
+  // Timestamps
+  createdAt  DateTime  @default(now()) @map("created_at")
+  
+  // Relations
+  file       File?     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  chunk      FileChunk? @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@map("file_embeddings")
+  @@index([fileId])
+  @@index([chunkId])
+}
+
+model SecurityPattern {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String   @db.Text
+  pattern     String   @db.Text
+  severity    String   // low, medium, high, critical
+  category    String   // sql_injection, xss, etc.
+  examples    String[] // Array of example patterns
+  mitigation  String[] // Array of mitigation strategies
+  
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  vulnerabilities VulnerabilityDetection[]
+  
+  @@map("security_patterns")
+  @@index([category])
+  @@index([severity])
+}
+
+model VulnerabilityDetection {
+  id            String   @id @default(uuid())
+  fileId        String   @map("file_id")
+  chunkId       String?  @map("chunk_id")
+  patternId     String   @map("pattern_id")
+  confidence    Float    // 0.0 to 1.0
+  lineNumber    Int?     @map("line_number")
+  description   String   @db.Text
+  recommendation String  @db.Text
+  
+  // Timestamps
+  detectedAt    DateTime @default(now()) @map("detected_at")
+  
+  // Relations
+  file          File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  chunk         FileChunk? @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  pattern       SecurityPattern @relation(fields: [patternId], references: [id])
+  
+  @@map("vulnerability_detections")
+  @@index([fileId])
+  @@index([confidence])
+  @@index([detectedAt])
+}

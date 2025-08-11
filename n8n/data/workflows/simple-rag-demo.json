@@ -1,0 +1,168 @@
+{
+    "name": "Simple RAG Demo Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "simple-demo",
+                "options": {
+                    "responseMode": "onReceived"
+                }
+            },
+            "id": "demo-webhook-1",
+            "name": "Demo Input",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Simple demo queries for testing\nconst demoQueries = [\n  \"SELECT * FROM users WHERE id = '1' OR '1'='1'\",\n  \"SELECT name FROM products WHERE category = 'electronics'\",\n  \"UPDATE users SET password = 'hacked' WHERE 1=1; --\",\n  \"SELECT email FROM customers WHERE city = 'Boston'\"\n];\n\nconst inputQuery = $input.all()[0].json.query;\nconst selectedQuery = inputQuery || demoQueries[Math.floor(Math.random() * demoQueries.length)];\n\nconsole.log(`🎯 Demo Analysis for: ${selectedQuery}`);\n\nreturn {\n  json: {\n    query: selectedQuery,\n    demo_mode: true,\n    timestamp: new Date().toISOString()\n  }\n};"
+            },
+            "id": "demo-prep-2",
+            "name": "Prepare Demo Query",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://localhost:3002/api/rag/analyze",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "value": "={{ $json.query }}"
+                        },
+                        {
+                            "name": "max_sources",
+                            "value": 3
+                        },
+                        {
+                            "name": "include_scores",
+                            "value": true
+                        }
+                    ]
+                }
+            },
+            "id": "demo-rag-3",
+            "name": "RAG Analysis",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format demo results\nconst ragResult = $input.all()[0].json;\nconst originalQuery = $input.all()[0].json.query || 'Unknown';\n\nconst isVulnerable = ragResult.answer?.toLowerCase().includes('injection') || \n                   ragResult.answer?.toLowerCase().includes('vulnerable');\n\nconst demoReport = {\n  demo_results: {\n    query_analyzed: originalQuery,\n    vulnerability_detected: isVulnerable,\n    rag_answer: ragResult.answer,\n    sources_found: ragResult.sources?.length || 0,\n    top_sources: ragResult.sources?.slice(0, 2).map(s => ({\n      preview: s.content?.substring(0, 150) + '...',\n      score: s.score\n    })),\n    analysis_summary: {\n      risk_assessment: isVulnerable ? '🚨 HIGH RISK' : '✅ SAFE',\n      recommendation: isVulnerable ? \n        'Use parameterized queries and input validation' : \n        'Query appears safe, continue monitoring'\n    }\n  },\n  demo_info: {\n    timestamp: new Date().toISOString(),\n    processing_time: '< 1 second',\n    workflow_version: 'Demo v1.0'\n  }\n};\n\nconsole.log(`📊 Demo completed: ${isVulnerable ? 'VULNERABLE' : 'SAFE'}`);\n\nreturn { json: demoReport };"
+            },
+            "id": "demo-format-4",
+            "name": "Format Demo Results",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                800,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "allIncomingItems",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "demo-response-5",
+            "name": "Return Demo Results",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Demo Input": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Demo Query",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Demo Query": {
+            "main": [
+                [
+                    {
+                        "node": "RAG Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "RAG Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Format Demo Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Demo Results": {
+            "main": [
+                [
+                    {
+                        "node": "Return Demo Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "timezone": "America/New_York",
+        "saveManualExecutions": true
+    },
+    "tags": [
+        {
+            "id": "demo-tag",
+            "name": "demo"
+        }
+    ]
+}

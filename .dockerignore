@@ -1,0 +1,162 @@
+# ===========================================
+# SQL INJECTION DETECTION SYSTEM - DOCKER IGNORE
+# ===========================================
+
+# ===========================================
+# ENVIRONMENT & SENSITIVE DATA
+# ===========================================
+.env
+.env.*
+*.env
+secrets/
+keys/
+certificates/
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+
+# ===========================================
+# NODE.JS & DEVELOPMENT
+# ===========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+.pnpm-debug.log*
+
+# ===========================================
+# VERSION CONTROL
+# ===========================================
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ===========================================
+# IDE & EDITOR FILES
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===========================================
+# DOCUMENTATION & NON-RUNTIME FILES
+# ===========================================
+README.md
+CHANGELOG.md
+LICENSE
+*.md
+docs/
+documentation/
+
+# ===========================================
+# TESTING & COVERAGE
+# ===========================================
+test/
+tests/
+__tests__/
+coverage/
+.jest/
+jest-results.xml
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# ===========================================
+# LOGS & MONITORING
+# ===========================================
+logs/
+*.log
+*.log.*
+
+# ===========================================
+# BUILD ARTIFACTS (keep what's needed for runtime)
+# ===========================================
+# Include dist/ as it contains compiled output
+# dist/
+
+# Exclude source TypeScript files if dist exists
+src/
+apps/*/src/
+*.ts
+!dist/**/*.js
+tsconfig.json
+*.tsbuildinfo
+
+# ===========================================
+# DEVELOPMENT TOOLS
+# ===========================================
+scripts/
+tools/
+.eslintrc.*
+.prettierrc.*
+.editorconfig
+.nvmrc
+nodemon.json
+
+# ===========================================
+# UPLOADS & USER CONTENT
+# ===========================================
+uploads/
+temp/
+tmp/
+user-data/
+
+# ===========================================
+# DATABASE FILES
+# ===========================================
+*.db
+*.sqlite
+*.sqlite3
+database.db
+
+# ===========================================
+# DOCKER FILES (avoid recursion)
+# ===========================================
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+.dockerignore
+
+# ===========================================
+# MONITORING & INFRASTRUCTURE
+# ===========================================
+monitoring/
+infrastructure/
+k8s/
+kubernetes/
+terraform/
+ansible/
+
+# ===========================================
+# OPERATING SYSTEM FILES
+# ===========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================================
+# BACKUP & TEMPORARY FILES
+# ===========================================
+*.backup
+*.bak
+*.tmp
+*.temp
+backup/
+backups/
+
+# ===========================================
+# PACKAGE MANAGER FILES (keep package.json)
+# ===========================================
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# End of .dockerignore

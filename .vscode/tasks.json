@@ -1,0 +1,220 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "PostgreSQL: Start Docker",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "up",
+                "postgres",
+                "-d"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Start PostgreSQL database using Docker Compose"
+        },
+        {
+            "label": "PostgreSQL: Connect to Database",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "postgres",
+                "psql",
+                "-U",
+                "postgres",
+                "-d",
+                "sqli_detection"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "detail": "Connect to the sqli_detection database via Docker"
+        },
+        {
+            "label": "PostgreSQL: Reset Database",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "postgres",
+                "psql",
+                "-U",
+                "postgres",
+                "-c",
+                "DROP DATABASE IF EXISTS sqli_detection; CREATE DATABASE sqli_detection;"
+            ],
+            "group": "build",
+            "dependsOn": "PostgreSQL: Start Docker",
+            "detail": "Drop and recreate the sqli_detection database"
+        },
+        {
+            "label": "PostgreSQL: Load Sample Data",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "postgres",
+                "psql",
+                "-U",
+                "postgres",
+                "-d",
+                "sqli_detection",
+                "-f",
+                "/docker-entrypoint-initdb.d/init.sql"
+            ],
+            "group": "build",
+            "dependsOn": "PostgreSQL: Reset Database",
+            "detail": "Load sample vulnerable files and security patterns"
+        },
+        {
+            "label": "PostgreSQL: Check Status",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "postgres",
+                "pg_isready",
+                "-U",
+                "postgres"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Check if PostgreSQL is ready and accepting connections"
+        },
+        {
+            "label": "PostgreSQL: View Logs",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "logs",
+                "postgres",
+                "-f"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "detail": "View PostgreSQL container logs in real-time"
+        },
+        {
+            "label": "PostgreSQL: List Tables",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "postgres",
+                "psql",
+                "-U",
+                "postgres",
+                "-d",
+                "sqli_detection",
+                "-c",
+                "\\dt"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "List all tables in the sqli_detection database"
+        },
+        {
+            "label": "PostgreSQL: Show Sample Files",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "postgres",
+                "psql",
+                "-U",
+                "postgres",
+                "-d",
+                "sqli_detection",
+                "-c",
+                "SELECT fileName, fileType FROM \"File\";"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Show sample vulnerable files in the database"
+        },
+        {
+            "label": "MCP: Start Server",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "mcp:start"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "detail": "Start the MCP server for SQL injection detection"
+        },
+        {
+            "label": "API: Start Detection Service",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "api:start"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "detail": "Start the SQL injection detection API service"
+        },
+        {
+            "label": "Full Stack: Setup and Start",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "PostgreSQL: Start Docker",
+                "PostgreSQL: Load Sample Data",
+                "MCP: Start Server"
+            ],
+            "group": "build",
+            "detail": "Complete setup: Start PostgreSQL, load data, and start MCP server"
+        }
+    ]
+}
