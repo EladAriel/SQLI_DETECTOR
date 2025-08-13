@@ -210,9 +210,17 @@ export class RagServiceClient extends SecureServiceClient {
     /**
      * Query the knowledge base
      */
-    async queryKnowledgeBase(request: { query: string; context_type: string }): Promise<ServiceResponse> {
+    async queryKnowledgeBase(request: { query: string; context_type?: string; max_results?: number }): Promise<ServiceResponse> {
         this.logger.log(`Querying knowledge base`);
-        return this.makeRequest('POST', '/api/v1/rag/semantic-search', request);
+        // Transform request to match RAG service SemanticSearchDto format
+        const searchRequest = {
+            query: request.context_type && request.context_type !== 'all'
+                ? `${request.context_type} ${request.query}`
+                : request.query,
+            max_results: request.max_results || 5,
+            include_scores: true
+        };
+        return this.makeRequest('POST', '/api/v1/rag/semantic-search', searchRequest);
     }
 
     /**
@@ -220,7 +228,13 @@ export class RagServiceClient extends SecureServiceClient {
      */
     async searchSimilarPatterns(request: { pattern: string; max_results?: number }): Promise<ServiceResponse> {
         this.logger.log(`Searching for similar patterns`);
-        return this.makeRequest('POST', '/api/v1/rag/semantic-search', request);
+        // Transform request to match RAG service SemanticSearchDto format
+        const searchRequest = {
+            query: request.pattern,
+            max_results: request.max_results || 5,
+            include_scores: true
+        };
+        return this.makeRequest('POST', '/api/v1/rag/semantic-search', searchRequest);
     }
 
     /**
