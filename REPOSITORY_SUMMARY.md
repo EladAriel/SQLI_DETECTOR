@@ -130,26 +130,7 @@ graph TD
         L
     end
 ```
-        N
-    end
-    
-    subgraph "Vector Store Service"
-        D
-        I
-    end
-    
-    subgraph "Security Knowledge Base"
-        E
-        F
-        G
-        H
-    end
-    
-    subgraph "AI Processing"
-        K
-        L
-    end
-```
+
 **Key Components:**
 - **Input Processing**: Query validation and preprocessing
 - **Context Retrieval**: Semantic search against vector database (k=5 default)
