@@ -127,8 +127,8 @@ export class MCPAnalysisOrchestrator {
             // Run both analyses in parallel for comprehensive scanning
             const [staticResult, ragResult] = await Promise.allSettled([
                 this.staticApiClient.performSecurityScan({
-                    content: payload,
-                    context_type: 'security_scan'
+                    payload: payload,
+                    scan_type: scanType as any
                 }),
                 this.ragServiceClient.performAnalysis({
                     query: payload,
@@ -170,9 +170,10 @@ export class MCPAnalysisOrchestrator {
             // Fallback to static API if RAG fails
             if (result.status === 'error') {
                 console.error(`RAG search failed, falling back to static API`);
+                // Static API expects AnalyzeQueryDto format (query + optional database_type)
+                // We'll treat the knowledge search as a regular query analysis
                 result = await this.staticApiClient.analyzeQuery({
-                    query: query,
-                    context_type: 'security_knowledge'
+                    query: query
                 });
             }
 
@@ -229,8 +230,7 @@ export class MCPAnalysisOrchestrator {
 
             // Analyze the uploaded content
             const analysisResult = await this.staticApiClient.analyzeQuery({
-                query: content,
-                context_type: 'uploaded_file'
+                query: content
             });
 
             const totalTime = Date.now() - startTime;
@@ -285,7 +285,6 @@ export class MCPAnalysisOrchestrator {
     private async performStaticAnalysis(query: string, databaseType?: string): Promise<ServiceResponse> {
         return this.staticApiClient.analyzeQuery({
             query,
-            context_type: 'query_analysis',
             ...(databaseType && { database_type: databaseType })
         });
     }
