@@ -5,6 +5,8 @@ A comprehensive TypeScript-based microservices platform demonstrating **Model Co
 ## 🚀 Key Features
 
 ### 🔧 MCP Server Implementation
+- **Intelligent Orchestrator**: Smart routing between static analysis and AI-powered deep scans
+- **Two-Tier Analysis**: Fast pattern matching (<100ms) + AI enhancement when needed (<3s)
 - **Resources**: Access to security patterns, knowledge base, and vulnerability examples
 - **Tools**: SQL analysis, pattern detection, secure query generation, batch processing
 - **Prompts**: Guided security analysis, vulnerability explanations, best practices
@@ -18,43 +20,63 @@ A comprehensive TypeScript-based microservices platform demonstrating **Model Co
 
 ### 🛡️ Security Analysis Engine
 - **Pattern Detection**: 50+ SQL injection patterns with severity scoring
-- **Vulnerability Scanning**: Real-time threat identification
+- **Vulnerability Scanning**: Real-time threat identification with smart routing
 - **Secure Query Generation**: Automated parameterized query suggestions
 - **Knowledge Base**: 100+ security rules and best practices
 - **Risk Assessment**: Comprehensive scoring and remediation guidance
 
 ### 🏗️ Microservices Architecture
+- **Service Orchestration**: Intelligent routing with health management and fallbacks
 - **Independent Services**: Scalable, maintainable microservice design
+- **Secure Communication**: HTTP clients with retry logic, authentication, and circuit breakers
 - **Health Monitoring**: Built-in health checks and status endpoints
 - **API Documentation**: Auto-generated Swagger/OpenAPI documentation
 - **Database Integration**: PostgreSQL with Prisma ORM
 - **Error Handling**: Comprehensive logging and error management
 
-## 🏗️ Architecture
+## 🏗️ Refactored Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   MCP Server    │    │  NestJS API     │    │ LangChain RAG   │
-│   (stdio)       │    │  (Port 3001)    │    │  (Port 3002)    │
-│                 │    │                 │    │                 │
-│ • Resources     │    │ • REST API      │    │ • Vector Store  │
-│ • Tools         │◄──►│ • Validation    │◄──►│ • OpenAI GPT    │
-│ • Prompts       │    │ • Swagger       │    │ • Embeddings    │
-│ • JSON-RPC      │    │ • Health Check  │    │ • File Upload   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │  PostgreSQL     │
-                    │  Database       │
-                    │  (Port 5432)    │
-                    │                 │
-                    │ • Analysis Logs │
-                    │ • User Sessions │
-                    │ • Audit Trail   │
-                    │ • Vector Store  │
-                    └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        MCP Server (stdio)                      │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Resources     │  │      Tools      │  │     Prompts     │ │
+│  │ • Patterns      │  │ • SQL Analysis  │  │ • Security      │ │
+│  │ • Rules         │  │ • Security Scan │  │   Review        │ │
+│  │ • Knowledge     │  │ • Pattern Search│  │ • Vulnerability │ │
+│  │ • Examples      │  │ • File Upload   │  │   Assessment    │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+         ┌────────────────┴────────────────┐
+         │    MCP Analysis Orchestrator    │
+         │  • Intelligent Routing Logic   │
+         │  • Two-Tier Analysis Strategy  │  
+         │  • Service Health Management   │
+         │  • Error Handling & Fallbacks  │
+         └────────────┬─────────────┬──────┘
+                      │             │
+              ┌───────▼────────┐   ┌▼────────────────┐
+              │  Static API    │   │  RAG Service    │
+              │  (Port 3001)   │   │  (Port 3002)    │
+              │                │   │                 │
+              │ • Fast Analysis│   │ • AI Analysis   │
+              │ • Pattern Match│   │ • Vector Search │
+              │ • <100ms Response│   │ • <3s Deep Scan │
+              │ • Rule Engine  │   │ • File Processing│
+              └────────────────┘   └─────────────────┘
+                      │                       │
+                      └───────────┬───────────┘
+                                  │
+                     ┌────────────▼────────────┐
+                     │    PostgreSQL Database  │
+                     │        (Port 5432)      │
+                     │                         │
+                     │ • Vulnerability Data    │
+                     │ • Security Patterns     │
+                     │ • Analysis History      │
+                     │ • Vector Embeddings     │
+                     └─────────────────────────┘
 ```
 
 ## 📦 Tech Stack
@@ -73,7 +95,7 @@ A comprehensive TypeScript-based microservices platform demonstrating **Model Co
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+ (currently tested with v22)
 - Docker & Docker Compose
 - PostgreSQL 15+ (or Docker)
 - OpenAI API Key (optional for RAG features)

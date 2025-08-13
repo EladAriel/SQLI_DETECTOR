@@ -1,8 +1,28 @@
-# SQL Injection Detection Microservices Platform - Technical Summary
+# SQL Injection Detection Platform - Intelligent Orchestration Architecture
 
 ## Project Overview
 
-This repository demonstrates a comprehensive **TypeScript-based microservices platform** for SQL injection detection, featuring **Model Context Protocol (MCP) server** capabilities, **LangChain RAG (Retrieval-Augmented Generation)**, and advanced security analysis. The project showcases enterprise-level security architecture, AI-powered vulnerability detection, and modern DevOps practices.
+This repository demonstrates a **comprehensive TypeScript microservices platform** with **intelligent orchestration** for SQL injection detection, featuring an advanced **Model Context Protocol (MCP) server**, **LangChain RAG (Retrieval-Augmented Generation)**, and **two-tier analysis architecture**. The project showcases enterprise-level security architecture with **smart routing**, AI-powered vulnerability detection, and modern DevOps practices.
+
+### Architectural Innovation: MCPAnalysisOrchestrator
+
+The platform features a groundbreaking **intelligent orchestration layer** that implements a **two-tier analysis strategy**:
+
+1. **Tier 1 - Fast Static Analysis** (<100ms)
+   - Pattern-based detection using 50+ SQL injection signatures
+   - Rule engine with severity scoring
+   - Immediate response for known vulnerabilities
+
+2. **Tier 2 - AI-Enhanced Deep Analysis** (<3s)
+   - LangChain RAG with vector search and semantic matching
+   - GPT-4 powered contextual analysis
+   - Comprehensive vulnerability assessment with remediation
+
+**Smart Routing Logic:**
+- Simple queries → Static analysis only
+- Complex code → Static + AI enhancement
+- Large files → Intelligent chunking with parallel processing
+- Error conditions → Graceful fallback with detailed reporting
 
 ---
 
@@ -20,6 +40,49 @@ This repository demonstrates a comprehensive **TypeScript-based microservices pl
 - **GPT-4.1**: Chosen for superior reasoning capabilities in security analysis, better context understanding, and reduced hallucination for critical security assessments
 - **Temperature 0.2 (Not 0)**: Balances consistency with necessary creativity for security analysis. Pure determinism (0.0) can miss nuanced attack patterns and edge cases, while 0.2 maintains reliability while allowing the model to explore different vulnerability scenarios and provide comprehensive remediation strategies
 - **Text-embedding-3-large**: Provides high-dimensional embeddings (3072 dimensions) for precise semantic similarity matching in security pattern detection
+
+### Intelligent Orchestration Flow
+
+```mermaid
+graph TD
+    A[SQL Query Input] --> B{Query Complexity Analysis}
+    B -->|Simple Pattern| C[Tier 1: Static Analysis]
+    B -->|Complex/Obfuscated| D[Tier 1 + Tier 2: AI Enhancement]
+    
+    C --> E[Pattern Matching Engine]
+    E --> F[50+ Injection Signatures]
+    F --> G[Risk Scoring]
+    G --> H[Fast Response <100ms]
+    
+    D --> I[Static Analysis First]
+    I --> J[Vector Search RAG]
+    J --> K[GPT-4 Contextual Analysis]
+    K --> L[Comprehensive Report <3s]
+    
+    H --> M[Final Security Report]
+    L --> M
+    
+    subgraph "MCPAnalysisOrchestrator"
+        B
+    end
+    
+    subgraph "Tier 1: Fast Static"
+        C
+        E
+        F
+        G
+    end
+    
+    subgraph "Tier 2: AI Enhanced"
+        J
+        K
+    end
+    
+    style B fill:#ff9800
+    style C fill:#4caf50
+    style D fill:#2196f3
+    style M fill:#9c27b0
+```
 
 ### RAG System Architecture
 
@@ -47,6 +110,26 @@ graph TD
         C
         J
         M
+        N
+    end
+    
+    subgraph "Vector Store Service"
+        D
+        I
+    end
+    
+    subgraph "Security Knowledge Base"
+        E
+        F
+        G
+        H
+    end
+    
+    subgraph "AI Processing"
+        K
+        L
+    end
+```
         N
     end
     
@@ -159,73 +242,96 @@ const chain = RunnableSequence.from([
 
 ---
 
-## Microservice Architecture
+## Intelligent Orchestration Architecture
 
-### Service Overview
+### Core Components
 
-**1. SQL Injection Detection API (Port 3001)**
-- **Role**: Core vulnerability detection and analysis
+**1. MCP Server with Analysis Orchestrator (stdio transport)**
+- **Role**: Intelligent coordination of analysis services via Model Context Protocol
+- **Technology**: TypeScript with JSON-RPC, MCPAnalysisOrchestrator
+- **Features**: Smart routing, two-tier analysis, health management, graceful fallbacks
+- **Innovation**: Routes simple queries to fast static analysis, complex queries to AI-enhanced deep scans
+
+**2. SQL Injection Detection API (Port 3001)**
+- **Role**: Fast static vulnerability detection and pattern matching
 - **Technology**: NestJS with TypeScript
-- **Features**: Pattern detection, risk scoring, batch processing
+- **Performance**: <100ms response times for pattern-based detection
+- **Features**: 50+ injection patterns, risk scoring, rule engine
 - **Endpoints**: 12+ REST endpoints with OpenAPI documentation
 
-**2. LangChain RAG Service (Port 3002)**
-- **Role**: AI-powered analysis and semantic search
+**3. LangChain RAG Service (Port 3002)**
+- **Role**: AI-powered deep analysis and semantic search
 - **Technology**: NestJS with LangChain integration
-- **Features**: Vector search, embeddings, file processing
+- **Performance**: <3s response times for comprehensive AI analysis
+- **Features**: Vector search, embeddings, file processing, contextual analysis
 - **AI Integration**: GPT-4.1 for intelligent security analysis
 
-**3. MCP Server (stdio transport)**
-- **Role**: AI model integration via Model Context Protocol
-- **Technology**: TypeScript with JSON-RPC
-- **Features**: Resources, tools, and prompts for AI systems
-- **Integration**: Direct communication with AI models
+**4. Service Communication Layer**
+- **SecureServiceClient**: HTTP client with retry logic, authentication, circuit breakers
+- **RagServiceClient**: Specialized client for RAG service communication
+- **Health Management**: Automatic failover and service health monitoring
 
-**4. PostgreSQL Database (Port 5432)**
+**5. PostgreSQL Database (Port 5432)**
 - **Role**: Data persistence and vector storage
 - **Technology**: PostgreSQL 15 with vector extensions
-- **Features**: Audit logging, file storage, pattern management
+- **Features**: Audit logging, file storage, pattern management, vector embeddings
 
 ### Service Communication
 
 ```mermaid
 graph TD
-    A[MCP Server] -->|JSON-RPC| B[Detection API]
-    B -->|HTTP/REST| C[RAG Service]
-    C -->|Vector Search| D[PostgreSQL Database]
-    B -->|SQL Queries| D
-    E[N8N Workflows] -->|HTTP| B
-    E -->|HTTP| C
-    F[Grafana] -->|Metrics Query| G[Prometheus]
-    G -->|Scrape Metrics| B
-    G -->|Scrape Metrics| C
+    A[MCP Server<br/>stdio transport] --> B{MCPAnalysisOrchestrator<br/>Smart Router}
+    B -->|Simple Queries| C[Static Analysis API<br/>Port 3001]
+    B -->|Complex Queries| D[Static + RAG Analysis]
     
-    subgraph "Core Services"
+    C -->|Pattern Detection| E[PostgreSQL Database<br/>Port 5432]
+    D --> C
+    D --> F[RAG Service<br/>Port 3002]
+    F -->|Vector Search| E
+    
+    G[N8N Workflows] -->|HTTP/REST| C
+    G -->|HTTP/REST| F
+    
+    H[Grafana Dashboard] -->|Query Metrics| I[Prometheus]
+    I -->|Scrape /metrics| C
+    I -->|Scrape /metrics| F
+    
+    J[SecureServiceClient] -.->|Retry Logic<br/>Circuit Breaker| C
+    K[RagServiceClient] -.->|Auth & Health<br/>Monitoring| F
+    
+    subgraph "Intelligent Orchestration"
         A
         B
+        J
+        K
+    end
+    
+    subgraph "Analysis Services"
         C
+        F
     end
     
-    subgraph "Data Layer"
-        D
-    end
-    
-    subgraph "Automation"
+    subgraph "Data & Storage"
         E
     end
     
-    subgraph "Monitoring"
-        F
+    subgraph "Workflow Automation"
         G
     end
     
+    subgraph "Monitoring Stack"
+        H
+        I
+    end
+    
     style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
-    style E fill:#fce4ec
-    style F fill:#f1f8e9
-    style G fill:#f1f8e9
+    style B fill:#ff9800
+    style C fill:#4caf50
+    style F fill:#2196f3
+    style E fill:#fff3e0
+    style G fill:#fce4ec
+    style H fill:#f1f8e9
+    style I fill:#f1f8e9
 ```
 
 **Communication Protocols:**
