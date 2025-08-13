@@ -10,7 +10,7 @@
     "mcp:start": "ts-node --transpile-only apps/mcp-server/index.ts",
     "mcp:inspect": "npx @modelcontextprotocol/inspector ts-node --transpile-only apps/mcp-server/index.ts",
     "mcp:inspect:prod": "npm run build && npx @modelcontextprotocol/inspector node dist/apps/mcp-server/index.js",
-    "mcp:inspect:env": "npx @modelcontextprotocol/inspector -e SQLI_API_URL=http://localhost:3001 -e NODE_ENV=development -e DEBUG=true ts-node --transpile-only apps/mcp-server/index.ts",
+    "mcp:inspect:env": "npx @modelcontextprotocol/inspector -e SQLI_API_URL=http://localhost:3001 -e NODE_ENV=production -e DEBUG=false ts-node --transpile-only apps/mcp-server/index.ts",
     "api:start": "ts-node --transpile-only apps/sqli-detection-api/src/main.ts",
     "rag:start": "ts-node --transpile-only apps/langchain-rag/src/main.ts",
     "dev:status": "bash dev-ports.sh status",
